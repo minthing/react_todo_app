@@ -10,9 +10,20 @@ export default function App() {
   const [ok, setOk] = useState(false);
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
+  // todo를 object화 하면 id만 알아도 삭제를 쉽게 구현 가능
+  const [todos, setTodos] = useState({})
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
   const onChangeText = (payload) => setText(payload)
+  const addTodo = () => {
+    if(text === ""){
+      return
+    }
+    const newTodos = Object.assign({}, todos, {[Date.now()]: { text, work:working }})
+    setTodos(newTodos)
+    setText("")
+    console.log(todos)
+  }
 
 
   useState(async () => {
@@ -33,7 +44,7 @@ export default function App() {
         <TouchableOpacity onPress={travel}><Text style={{...styles.btnText, color: working? theme.grey : "white"}}>Go</Text></TouchableOpacity>
       </View>
       )}
-        <TextInput value={text} autoCapitalize={"characters"} onChangeText={onChangeText} placeholder={working? "다 울었니? 이제 할 일을 하자." : "움직이는 게 곧 살아있는 것이다."} style={styles.input} />
+        <TextInput value={text} returnKeyType={"done"} onSubmitEditing={addTodo} autoCapitalize={"characters"} onChangeText={onChangeText} placeholder={working? "다 울었니? 이제 할 일을 하자." : "움직이는 게 곧 살아있는 것이다."} style={styles.input} />
     </View>
   );
 }
