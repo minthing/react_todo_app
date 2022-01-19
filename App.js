@@ -1,7 +1,7 @@
 import * as Font from 'expo-font';
 import React, { useEffect, useState } from "react";
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, } from 'react-native';
 import { theme } from './colors';
 
 
@@ -45,6 +45,13 @@ export default function App() {
       </View>
       )}
         <TextInput value={text} returnKeyType={"done"} onSubmitEditing={addTodo} autoCapitalize={"characters"} onChangeText={onChangeText} placeholder={working? "다 울었니? 이제 할 일을 하자." : "움직이는 게 곧 살아있는 것이다."} style={styles.input} />
+        <ScrollView>
+        {Object.keys(todos).map((key) => (
+          <View style={styles.todo} key={key}>
+            <Text style={styles.todoText}>{todos[key].text}</Text>
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -73,5 +80,16 @@ const styles = StyleSheet.create({
     paddingHorizontal:10,
     borderRadius:10,
     fontSize:16
+  },
+  todo:{
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderBottomColor: theme.grey,
+    borderBottomWidth: 1,
+  },
+  todoText:{
+    fontSize:16,
+    color:"white"
   }
 });
