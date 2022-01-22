@@ -1,8 +1,9 @@
 import * as Font from 'expo-font';
 import React, { useEffect, useState } from "react";
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, } from 'react-native';
 import { theme } from './colors';
+import { Fontisto } from "@expo/vector-icons";
 // https://react-native-async-storage.github.io/async-storage/docs/usage/
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,6 +25,31 @@ export default function App() {
   const loadTodos = async () => {
     const string = await AsyncStorage.getItem(storage_key)
     setTodos(JSON.parse(string));
+  }
+  // ** delete with alert
+  // const deleteToDo = (key) => {
+  //   Alert.alert("Delete To Do", "Are you sure?", [
+  //     { text: "Cancel" },
+  //     {
+  //       text: "I'm Sure",
+  //       style: "destructive",
+  //       onPress: () => {
+  //         const newToDos = { ...toDos };
+  //         delete newToDos[key];
+  //         setToDos(newToDos);
+  //         saveToDos(newToDos);
+  //       },
+  //     },
+  //   ]);
+  // };
+
+  const deleteTodo = async(id) => {
+    // 새 Object를 생성해서 그 안에서 key를 가진 데이터를 삭제시켜준다.
+    const newTodos = {...todos}
+    delete newTodos[id];
+    setTodos(newTodos);
+    await saveTodos(newTodos);
+
   }
   useEffect(() => {
     loadTodos();
@@ -65,6 +91,7 @@ export default function App() {
           todos[key].working === working ? 
           (<View style={styles.todo} key={key}>
             <Text style={styles.todoText}>{todos[key].text}</Text>
+            <TouchableOpacity onPress={() => {deleteTodo(key)}}><Fontisto name="trash" size={18} color="grey" /></TouchableOpacity>
           </View>) : null
         ))}
       </ScrollView>
@@ -103,6 +130,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomColor: theme.grey,
     borderBottomWidth: 1,
+    flexDirection:"row",
+    alignItems:"center",
+    justifyContent:"space-between"
   },
   todoText:{
     fontSize:16,
