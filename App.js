@@ -12,20 +12,30 @@ const storage_key = "@todos";
 export default function App() {
 
   const [ok, setOk] = useState(false);
+  const [done, setDone] = useState(false);
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   // todo를 object화 하면 id만 알아도 삭제를 쉽게 구현 가능
   const [todos, setTodos] = useState({})
-  const travel = () => setWorking(false);
+  const travel = () => {
+    setWorking(false);
+  };
+  AsyncStorage.getAllKeys();
   const work = () => setWorking(true);
+  AsyncStorage.setItem('current', JSON.stringify(true));
   const saveTodos = async (toSave) => {
     const string = JSON.stringify(toSave)
     await AsyncStorage.setItem(storage_key,  string)
   }
   const loadTodos = async () => {
-    const string = await AsyncStorage.getItem(storage_key)
-    setTodos(JSON.parse(string));
+    try {
+      const string = await AsyncStorage.getItem(storage_key);
+      return string != null ? setTodos(JSON.parse(string)) : null;
+      } catch (error) {
+      console.log(error);
+      }
   }
+
   // ** delete with alert
   // const deleteToDo = (key) => {
   //   Alert.alert("Delete To Do", "Are you sure?", [
@@ -49,17 +59,31 @@ export default function App() {
     delete newTodos[id];
     setTodos(newTodos);
     await saveTodos(newTodos);
-
   }
-  useEffect(() => {
+
+  const getTabState = async() => {
+    const currentTab = await AsyncStorage.getItem('current')
+    console.log(JSON.parse(currentTab))
+    setWorking(JSON.parse(currentTab))
+  }
+
+  const doneTodo = async(id) => {
+    const newTodos = {...todos};
+    newTodos[id].done = !newTodos[id].done
+    console.log(newTodos[id].done)
+    setTodos(newTodos);
+    await saveTodos(newTodos);
+  }
+  useEffect(async() => {
     loadTodos();
+    getTabState();
   }, [])
   const onChangeText = (payload) => setText(payload)
   const addTodo = async () => {
     if(text === ""){
       return
     }
-    const newTodos = Object.assign({}, todos, {[Date.now()]: { text, working }})
+    const newTodos = Object.assign({}, todos, {[Date.now()]: { text, working, done }})
     setTodos(newTodos);
     await saveTodos(newTodos);
     setText("");
@@ -90,8 +114,15 @@ export default function App() {
         {Object.keys(todos).map((key) => (
           todos[key].working === working ? 
           (<View style={styles.todo} key={key}>
-            <Text style={styles.todoText}>{todos[key].text}</Text>
-            <TouchableOpacity onPress={() => {deleteTodo(key)}}><Fontisto name="trash" size={18} color="grey" /></TouchableOpacity>
+            <Text style={todos[key].done? styles.doneText : styles.todoText}>{todos[key].text}</Text>
+            <View style={styles.icons}>
+              <TouchableOpacity style={styles.done} onPress={() => {doneTodo(key)}}>
+              {todos[key].done? (<Fontisto name="checkbox-active" size={18} color="white" />):<Fontisto name="checkbox-passive" size={18} color="grey" />}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {deleteTodo(key)}}>
+                <Fontisto name="trash" size={18} color="grey" />
+              </TouchableOpacity>
+            </View>
           </View>) : null
         ))}
       </ScrollView>
@@ -137,5 +168,18 @@ const styles = StyleSheet.create({
   todoText:{
     fontSize:16,
     color:"white"
+  },
+  icons:{
+    flexDirection:"row",
+    alignItems:"center",
+    justifyContent:"space-between"
+  },
+  done:{
+    marginRight:15
+  },
+  doneText:{
+    fontSize:16,
+    color:"grey",
+    textDecorationLine: 'line-through'
   }
 });
