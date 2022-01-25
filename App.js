@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, } from 'react-native';
 import { theme } from './colors';
-import { Fontisto } from "@expo/vector-icons";
+import { Fontisto, FontAwesome } from "@expo/vector-icons";
 // https://react-native-async-storage.github.io/async-storage/docs/usage/
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,17 +12,17 @@ const storage_key = "@todos";
 export default function App() {
 
   const [ok, setOk] = useState(false);
+  const [edited, setEdited] = useState(false);
   const [done, setDone] = useState(false);
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
+  const [editText, setEditText] = useState("")
   // todo를 object화 하면 id만 알아도 삭제를 쉽게 구현 가능
   const [todos, setTodos] = useState({})
   const travel = () => {
     setWorking(false);
   };
-  AsyncStorage.getAllKeys();
   const work = () => setWorking(true);
-  AsyncStorage.setItem('current', JSON.stringify(true));
   const saveTodos = async (toSave) => {
     const string = JSON.stringify(toSave)
     await AsyncStorage.setItem(storage_key,  string)
@@ -61,33 +61,43 @@ export default function App() {
     await saveTodos(newTodos);
   }
 
-  const getTabState = async() => {
-    const currentTab = await AsyncStorage.getItem('current')
-    console.log(JSON.parse(currentTab))
-    setWorking(JSON.parse(currentTab))
+  const changeTodo = async(key) => {
+    const newTodos = {...todos}
+    newTodos[key].edited = !newTodos[key].edited
+    setEditText(newTodos[key].text)
+    if(!newTodos[key].edited){
+      newTodos[key].text = editText
+    }
+    setTodos(newTodos);
+    await saveTodos(newTodos);
   }
+
+
+  // const getTabState = async() => {
+  //   const currentTab = await AsyncStorage.getItem('current')
+  //   console.log(JSON.parse(currentTab))
+  //   setWorking(JSON.parse(currentTab))
+  // }
 
   const doneTodo = async(id) => {
     const newTodos = {...todos};
     newTodos[id].done = !newTodos[id].done
-    console.log(newTodos[id].done)
     setTodos(newTodos);
     await saveTodos(newTodos);
   }
   useEffect(async() => {
     loadTodos();
-    getTabState();
   }, [])
   const onChangeText = (payload) => setText(payload)
+  const onEditedText = (payload) => setEditText(payload)
   const addTodo = async () => {
     if(text === ""){
       return
     }
-    const newTodos = Object.assign({}, todos, {[Date.now()]: { text, working, done }})
+    const newTodos = Object.assign({}, todos, {[Date.now()]: { text, working, done, edited }})
     setTodos(newTodos);
     await saveTodos(newTodos);
     setText("");
-    console.log(todos);
   }
 
 
@@ -113,11 +123,14 @@ export default function App() {
         <ScrollView>
         {Object.keys(todos).map((key) => (
           todos[key].working === working ? 
-          (<View style={styles.todo} key={key}>
-            <Text style={todos[key].done? styles.doneText : styles.todoText}>{todos[key].text}</Text>
+          (<View style={{...styles.todo, borderBottomColor:todos[key].edited ? "dodgerblue" : theme.grey}} key={key}>
+            {todos[key].edited === true ? (<TextInput value={editText} autoCapitalize={"characters"} onChangeText={onEditedText} style={styles.edit} />):(<Text style={todos[key].done? styles.doneText : styles.todoText}>{todos[key].text}</Text>)}
             <View style={styles.icons}>
               <TouchableOpacity style={styles.done} onPress={() => {doneTodo(key)}}>
               {todos[key].done? (<Fontisto name="checkbox-active" size={18} color="white" />):<Fontisto name="checkbox-passive" size={18} color="grey" />}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.change} onPress={() => {changeTodo(key)}}>
+                <FontAwesome name="pencil" size={18} color={todos[key].edited ? "white" : "grey"} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {deleteTodo(key)}}>
                 <Fontisto name="trash" size={18} color="grey" />
@@ -158,7 +171,7 @@ const styles = StyleSheet.create({
   todo:{
     marginTop: 10,
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     borderBottomColor: theme.grey,
     borderBottomWidth: 1,
     flexDirection:"row",
@@ -167,19 +180,30 @@ const styles = StyleSheet.create({
   },
   todoText:{
     fontSize:16,
-    color:"white"
+    color:"white",
+    flex:1
   },
   icons:{
     flexDirection:"row",
     alignItems:"center",
-    justifyContent:"space-between"
+    justifyContent:"space-between",
+    marginLeft:5
   },
   done:{
+    marginRight:15,
+  },
+  change:{
     marginRight:15
   },
   doneText:{
     fontSize:16,
     color:"grey",
-    textDecorationLine: 'line-through'
+    textDecorationLine: 'line-through',
+    flex:1
+  },
+  edit:{
+    color:"white",
+    fontSize:16,
+    flex:1
   }
 });
